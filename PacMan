@@ -1,0 +1,712 @@
+//Add a second bouncer to this code:
+#include <stdio.h>
+#include <iostream>
+#include <Windows.h>
+#include <allegro5/allegro.h>
+#include<allegro5/allegro_primitives.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
+#include <allegro5\allegro_audio.h>
+#include <allegro5\allegro_acodec.h>
+
+using namespace std;
+int collision(int b1_x, int b1_y, int b1_w, int b1_h, int b2_x, int b2_y, int b2_w, int b2_h);
+int PlattformCollide(int x, int y, int dir, int map[25][25]);
+
+//int PlattformCollide(int x, int y, int dir, int level[25][25]);
+int num = 274-12;
+int lives = 3;
+const int PACSIZE = 30;
+const int WALLSIZE = 40;
+const int DOT = 10;
+enum directions { Up, Down, Left, Right };
+
+int map[25][25] = {
+	//  1 2 3 4 5 6 7 8 9 1 1 2 3 4 5 6 7 8 9 1 1 2 3 4 5
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1, //1
+	1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1, //2
+	1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1, //3
+	1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1, //4
+	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1, //5
+	1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1, //6
+	1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1, //7
+	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1, //8
+	1,1,1,1,1,0,1,0,1,1,2,0,0,0,2,1,1,0,1,0,1,1,1,1,1, //9
+	1,1,1,1,1,0,1,0,1,1,2,0,0,0,2,1,1,0,1,0,1,1,1,1,1, //10
+	1,1,1,1,1,0,1,0,1,1,2,2,2,2,2,1,1,0,1,0,1,1,1,1,1, //11
+	1,1,1,1,1,0,1,0,1,1,2,2,2,2,2,1,1,0,1,0,1,1,1,1,1, //12
+	2,2,2,2,2,0,1,0,1,1,2,2,2,2,2,1,1,0,1,0,2,2,2,2,2, //13 
+	1,1,1,1,1,0,1,0,1,1,2,2,2,2,2,1,1,0,1,0,1,1,1,1,1, //14
+	1,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,1, //15
+	1,0,1,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,0,1, //16
+	1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1, //17
+	1,0,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,1,0,1, //18
+	1,0,1,1,1,1,0,1,1,1,1,0,1,0,1,1,1,1,0,1,1,1,1,0,1, //19
+	1,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,1, //20
+	1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1, //21
+	1,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,1, //22
+	1,0,1,1,1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,1,1,0,1, //23
+	1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1, //24
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1  //25
+};
+class Ghost {
+
+public:
+	Ghost();
+	int Ghost::collision(int b2_x, int b2_y, int b2_w, int b2_h);
+	void InitGhost(int x, int y, char color, int dir, bool dead, int GSpeed);
+	bool IsDead();
+	void DrawGhost();
+	void PrintInfo();
+	void Chase(int x, int y, int map[25][25]);
+	bool GetPacman(int x, int y);
+private:
+	int HitWall;
+	int Xpos;
+	int Ypos;
+	char Color;
+	int Direction;
+	bool Dead;
+	int Speed;
+	int Width;
+	int Height;
+};
+
+int main() {
+	Ghost Ghost1;
+	Ghost1.InitGhost(484, 404, 'r', 1, false, 6.0); // Red Ghost
+	Ghost Ghost2;
+	Ghost2.InitGhost(484, 442, 'b', 1, false, 6.0); // Blue Ghost
+	Ghost Ghost3;
+	Ghost3.InitGhost(484, 566, 'p', 1, false, 6.0); // Purple Ghost
+	Ghost Ghost4;
+	Ghost4.InitGhost(484, 524, 'o', 1, false, 6.0); // Orange Ghost
+
+
+	al_init();
+	al_init_primitives_addon();
+	al_install_audio();
+	al_init_acodec_addon();
+	al_init_font_addon(); // initialize the font addon
+	al_init_ttf_addon();// initialize the ttf (True Type Font) addon
+	ALLEGRO_DISPLAY *display = NULL;
+	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
+	ALLEGRO_TIMER *timer = NULL;
+	ALLEGRO_BITMAP *square = NULL;
+	ALLEGRO_BITMAP *wall = NULL;
+	ALLEGRO_BITMAP *Dot = NULL;
+
+	ALLEGRO_SAMPLE *chomp = NULL;
+	ALLEGRO_SAMPLE *Intro = NULL;
+	ALLEGRO_SAMPLE *dead = NULL;
+	ALLEGRO_SAMPLE *Lost = NULL;
+	ALLEGRO_SAMPLE *song = NULL;
+	ALLEGRO_SAMPLE *Winner = NULL;
+	ALLEGRO_SAMPLE_INSTANCE *songInstance = NULL;
+
+
+	ALLEGRO_FONT *font = al_load_ttf_font("Gameplay.ttf", 40, 0);
+	ALLEGRO_FONT *font1 = al_load_ttf_font("game_over.ttf", 500, 0);
+
+	//Hold the x and y positions of the square to where you want your square to start
+	int square_x = 766;
+	int square_y = 486;
+
+	//here's our key states.The first slot represents "Up"0, then "Down"1, "Left"2 and "Right"3
+
+	bool key[4] = { false, false, false, false };
+
+	//don't redraw until an event happens
+	bool redraw = true;
+
+	//this controls our game loop
+	bool doexit = false;
+
+	//get the keyboard ready to use
+	al_install_keyboard();
+
+	//set the timer so it "ticks" at 2 milliseconds
+	timer = al_create_timer(.02);
+
+	//set up sounds
+	al_reserve_samples(10);
+
+	chomp = al_load_sample("Bite.wav");
+	dead = al_load_sample("Pain.wav");
+	song = al_load_sample("Halo.wav");
+	Lost = al_load_sample("Lose.wav");
+	Intro = al_load_sample("Pacman.wav");
+	Winner = al_load_sample("Win.wav");
+
+
+	songInstance = al_create_sample_instance(song);
+	al_set_sample_instance_playmode(songInstance, ALLEGRO_PLAYMODE_LOOP);
+
+	al_attach_sample_instance_to_mixer(songInstance, al_get_default_mixer());
+
+	//Creates the Display and Position its
+	display = al_create_display(1000, 1000);
+	al_set_window_position(display, 420, 0);
+
+	//create a little 32x32 square
+	square = al_create_bitmap(PACSIZE, PACSIZE);
+	al_set_target_bitmap(square);
+	al_clear_to_color(al_map_rgb(255, 255, 0));
+	al_set_target_bitmap(al_get_backbuffer(display));
+	event_queue = al_create_event_queue();
+	//creating wall
+	wall = al_create_bitmap(WALLSIZE, WALLSIZE);
+	al_set_target_bitmap(wall);
+	al_clear_to_color(al_map_rgb(0, 255, 255));
+	//Creating Dot
+	Dot = al_create_bitmap(DOT, DOT);
+	al_set_target_bitmap(Dot);
+	al_clear_to_color(al_map_rgb(255, 255, 0));
+	al_set_target_bitmap(al_get_backbuffer(display));
+	event_queue = al_create_event_queue();
+
+	al_set_target_bitmap(al_get_backbuffer(display));
+	event_queue = al_create_event_queue();
+
+	al_set_target_bitmap(al_get_backbuffer(display));
+	event_queue = al_create_event_queue();
+	al_register_event_source(event_queue, al_get_display_event_source(display));
+	al_register_event_source(event_queue, al_get_keyboard_event_source());
+
+	//register the timer as an event source so it can generate events
+	al_register_event_source(event_queue, al_get_timer_event_source(timer));
+	al_clear_to_color(al_map_rgb(0, 0, 0));
+
+	al_flip_display();
+
+	//Starts the Timer
+	al_start_timer(timer);
+		Sleep(500);
+	al_play_sample(Intro, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+	Sleep(500);
+	while (!doexit)
+	{
+		al_play_sample(song, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+		ALLEGRO_EVENT ev;
+		//this function will wait forever if no events come in
+		al_wait_for_event(event_queue, &ev);
+
+		//sets this part of the game to run on the clicks of the timer 
+		if (ev.type == ALLEGRO_EVENT_TIMER) {
+
+			//enum directions { Right, Down, Left, Up };
+			//0 is Up, 1 is Down, 2 is Left, 3 is Right
+			if (map[square_x/40][square_y/40] == 0) {
+				map[square_x/40][square_y/ 40] = 2;
+				num = num - 1;
+				//PlaySound(TEXT("Bite.wav"), NULL, SND_FILENAME);
+				al_play_sample(chomp, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+				cout << num << endl;
+				cout << endl;
+			}
+			if (square_y <= -14) {
+				square_x = 486;
+				square_y = 960;
+			}
+			if (square_y > 966) {
+				square_x = 487;
+				square_y = -10;
+			}
+			if (key[0] && !PlattformCollide(square_x, square_y, 0, map)) {
+				square_y -= 4.0;}
+			if (key[1] && !PlattformCollide(square_x, square_y, 1, map)) {
+				square_y += 4.0;}
+			if (key[2] && !PlattformCollide(square_x, square_y, 2, map)) {
+				square_x -= 4.0;}
+			if (key[3] && !PlattformCollide(square_x, square_y, 3, map)) {
+				square_x += 4.0;}
+
+			//brick collisions!
+			if ((Ghost1.collision(square_x, square_y, 15, 15) == 0) == false) {
+				cout << "You Colllide" << endl;
+				al_play_sample(dead, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+				Ghost1.InitGhost(484, 404, 'r', 1, false, 6.0); // Red Ghost
+				Ghost2.InitGhost(484, 442, 'b', 1, false, 6.0); // Blue Ghost
+				Ghost3.InitGhost(484, 566, 'p', 1, false, 6.0); // Purple Ghost
+				Ghost4.InitGhost(484, 524, 'o', 1, false, 6.0); // Orange Ghost
+				square_x = 766;
+				square_y = 486;
+				lives = lives - 1;
+				//add sound effect here
+			}
+			if ((Ghost2.collision(square_x, square_y, 15, 15) == 0) == false) {
+				cout << "You Colllide" << endl;
+				al_play_sample(dead, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+				Ghost1.InitGhost(484, 404, 'r', 1, false, 6.0); // Red Ghost
+				Ghost2.InitGhost(484, 442, 'b', 1, false, 6.0); // Blue Ghost
+				Ghost3.InitGhost(484, 566, 'p', 1, false, 6.0); // Purple Ghost
+				Ghost4.InitGhost(484, 524, 'o', 1, false, 6.0); // Orange Ghost
+				square_x = 766;
+				square_y = 486;
+				lives = lives - 1;
+				//add sound effect here
+			}
+			if ((Ghost3.collision(square_x, square_y, 15, 15) == 0) == false) {
+				cout << "You Colllide" << endl;
+				al_play_sample(dead, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+				Ghost1.InitGhost(484, 404, 'r', 1, false, 6.0); // Red Ghost
+				Ghost2.InitGhost(484, 442, 'b', 1, false, 6.0); // Blue Ghost
+				Ghost3.InitGhost(484, 566, 'p', 1, false, 6.0); // Purple Ghost
+				Ghost4.InitGhost(484, 524, 'o', 1, false, 6.0); // Orange Ghost
+				square_x = 766;
+				square_y = 486;
+				lives = lives - 1;
+				//add sound effect here
+			}
+
+			if ((Ghost4.collision(square_x, square_y, 15, 15) == 0) == false) {
+				cout << "You Colllide" << endl;
+				al_play_sample(dead, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+				Ghost1.InitGhost(484, 404, 'r', 1, false, 6.0); // Red Ghost
+				Ghost2.InitGhost(484, 442, 'b', 1, false, 6.0); // Blue Ghost
+				Ghost3.InitGhost(484, 566, 'p', 1, false, 6.0); // Purple Ghost
+				Ghost4.InitGhost(484, 524, 'o', 1, false, 6.0); // Orange Ghost
+				square_x = 766;
+				square_y = 486;
+				lives = lives - 1;
+				//add sound effect here
+			}
+
+
+			//get ghosts to chase
+			Ghost1.Chase(square_x, square_y, map);
+			Ghost2.Chase(square_x/2, square_y/2, map);
+			Ghost3.Chase(square_x-20, square_y-20, map);
+			Ghost4.Chase(square_x+20, square_y+20, map);
+			//if an event happened, you better redraw
+			redraw = true;
+		}
+
+		//////////////////////////////////////////////////////////////////
+		//kill program if the user clicks the exit button
+		else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+			break;
+		}
+		//////////////////////////////////////////////////////////////////////////////////////////////////////
+		//A "key Down" event is when a key is pushed
+		//while a "key Up" event is when a key is released
+
+		//has something been pressed on the keyboard?
+		else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
+			//"keycode" holds all the different keys on the keyboard
+			switch (ev.keyboard.keycode) {
+				//if the Up key has been pressed
+			case ALLEGRO_KEY_UP:
+				key[0] = true;
+				break;
+				//if the Down key has been pressed
+			case ALLEGRO_KEY_DOWN:
+				key[1] = true;
+				break;
+				//if the Left key has been pressed
+			case ALLEGRO_KEY_LEFT:
+				key[2] = true;
+				break;
+				//if the Right key has been pressed
+			case ALLEGRO_KEY_RIGHT:
+				key[3] = true;
+				break;
+			}
+		}
+		//has something been released on the keyboard?
+		else if (ev.type == ALLEGRO_EVENT_KEY_UP) {
+			switch (ev.keyboard.keycode) {
+			case ALLEGRO_KEY_UP:
+				key[0] = false;
+				break;
+			case ALLEGRO_KEY_DOWN:
+				key[1] = false;
+				break;
+			case ALLEGRO_KEY_LEFT:
+				key[2] = false;
+				break;
+			case ALLEGRO_KEY_RIGHT:
+				key[3] = false;
+				break;
+				//kill the program if someone presses escape
+			case ALLEGRO_KEY_ESCAPE:
+				doexit = true;
+				break;
+			}
+		}
+		//render section: draws stuff
+		//if you were supposed to redraw but there wasn't an event, don't redraw
+		if (redraw && al_is_event_queue_empty(event_queue)) {
+			redraw = false;
+
+			al_clear_to_color(al_map_rgb(0, 0, 0));
+
+			//Ghost
+			Ghost1.DrawGhost();
+			Ghost2.DrawGhost();
+			Ghost3.DrawGhost();
+			Ghost4.DrawGhost();
+
+			//actually Draws the square
+			al_draw_bitmap(square, square_x, square_y, 0);
+
+			for (int i = 0; i < 25; i++) {
+				for (int j = 0; j < 25; j++) {
+				//al_draw_rectangle(i*40,j*40, i*40+40, j*40+40, al_map_rgb(50,80,90 ), 3);
+					if (map[j][i] == 1) {
+						al_draw_bitmap(wall, j * 40, i * 40, 0);
+					}
+					if (map[j][i] == 0) {
+						al_draw_bitmap(Dot, j * 40 + 15, i * 40 + 15, 0);
+					}
+				}
+			}
+			if (lives > 0)
+			al_draw_textf(font, al_map_rgb(0,0,0), 350, 350, NULL, "lives: %d", lives);
+			
+			if (num <= 0) {
+				al_draw_filled_rectangle(0, 0, 1000, 1000, al_map_rgb(255, 255, 255));
+				al_draw_text(font1, al_map_rgb(255, 0, 0), 150, 250, 0, "you win!"); 
+				al_play_sample(Winner, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+			}
+			if (lives <= 0) {
+				al_draw_filled_rectangle(0, 0, 1000, 1000, al_map_rgb(255, 255, 255));
+				al_draw_text(font1, al_map_rgb(255, 0, 0), 150, 250, 0, "you lose!");
+				lives = 0;
+				al_play_sample(Lost, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+			}
+
+			al_flip_display();
+
+		}
+	}//end game loop
+	al_destroy_sample(chomp);
+	al_destroy_sample(dead);
+	al_destroy_sample(Winner);
+	al_destroy_sample(Lost);
+	al_destroy_sample(song);
+	al_destroy_sample(Intro);
+	al_destroy_sample_instance(songInstance);
+	al_destroy_bitmap(Dot);
+	al_destroy_bitmap(square);
+	al_destroy_bitmap(wall);
+	al_destroy_timer(timer);
+	al_destroy_display(display);
+	al_destroy_event_queue(event_queue);
+
+	return 0;
+}
+int PlattformCollide(int x, int y, int dir, int map[25][25]) {
+	enum directions { Up, Down, Left, Right };
+ //Down collision
+	if (((map[(x) / 40][(y + 30 + 5 ) / 40] == 1) && dir == Down) || ((map[(x + 30) / 40][(y + 30 +5) / 40] == 1) && dir == Down) || ((map[(x + 15)/40][(y + 30+5)/40] == 1) && dir == Down)) {
+		return 1;
+	}
+	//Up collision
+	if (((map[(x) / 40][(y-5) / 40] == 1) && dir == Up) || ((map[(x + 30) / 40][(y-5) / 40] == 1) && dir == Up) || ((map[(x + 15) / 40][(y-5) / 40] == 1) && dir == Up)) {
+		return 1;
+	}
+	//Left collision
+	if (((map[(x-5) / 40][(y) / 40] == 1) && dir == Left) || ((map[(x-5) / 40][(y + 30) / 40] == 1) && dir == Left) || ((map[(x-5) / 40][(y + 15) / 40] == 1) && dir == Left)) {
+		return 1;
+	}
+	//Right collision
+	 if (((map[(x + 35) / 40][(y) / 40] == 1) && dir == 3) || ((map[(x+35) / 40][(y+30) / 40] == 1) && dir == 3) || ((map[(x+35) / 40][(y + 15) / 40] == 1) && dir == Right)) {
+		return 1;
+	}
+	else
+		return 0;
+}
+
+Ghost::Ghost() {
+	HitWall = 0;
+	Xpos = 0;
+	Ypos = 0;
+	Color = 'a';
+	Direction = 0;
+	Dead = 0;
+	Speed = 0;
+	Width = 0;
+	Height = 0;
+}
+
+
+void Ghost::InitGhost(int x, int y, char color, int dir, bool dead, int GSpeed) {
+	HitWall = false;
+	Xpos = x;
+	Ypos = y;
+	Color = color;
+	Direction = dir;
+	Dead = false;
+	Speed = GSpeed;
+	Width = PACSIZE;
+	Height = PACSIZE;
+
+
+}
+bool Ghost::IsDead() {
+	return Dead;
+}
+void Ghost::DrawGhost() {
+	if (Color == 'r')
+		al_draw_filled_rectangle(Xpos, Ypos, Xpos + Height, Ypos + Width, al_map_rgb(255, 0, 0));
+	else if (Color == 'b')
+		al_draw_filled_rectangle(Xpos, Ypos, Xpos + Height, Ypos + Width, al_map_rgb(65, 105, 225));
+	else if (Color == 'p')
+		al_draw_filled_rectangle(Xpos, Ypos, Xpos + Height, Ypos + Width, al_map_rgb(255, 0, 255));
+	else if (Color == 'o')
+		al_draw_filled_rectangle(Xpos, Ypos, Xpos + Height, Ypos + Width, al_map_rgb(255, 140, 0));
+}
+void Ghost::PrintInfo() {
+	cout << Color << endl;
+	cout << Xpos << endl;
+	cout << Ypos << endl;
+}
+void Ghost::Chase(int x, int y, int map[25][25]) {
+	enum directions { Up, Down, Left, Right };
+	/////////////////////////////////Left STATE (1)//////////////////////////////////////////////////////////////////
+	//if we're moving Left and there's an opening above and pacman is above, move Up
+	if ((Direction == Left) && !PlattformCollide(Xpos, Ypos, Up, map) && y<Ypos)
+		while (!PlattformCollide(Xpos, Ypos, 2, map)) {
+			Direction = Up;
+			Ypos -= 4;
+			return;
+		}
+	//if we're moving Left and there's an opening below and pacman is below, move Down
+	if ((Direction == Left) && !PlattformCollide(Xpos, Ypos, Down, map) && y>Ypos)
+		while (!PlattformCollide(Xpos, Ypos, 4, map)) {
+			Direction = Down;
+			Ypos += 4;
+			return;
+		}
+	if (Direction == Left)//Left
+		while (!PlattformCollide(Xpos, Ypos, Left, map)) {
+			Xpos -= 4;
+			return;
+		}
+	////////////////////////////////Up STATE (2)///////////////////////////////////////////////////////////////
+	//if we're moving Up and there's an opening Left and pacman is Left, move Left
+	if ((Direction == Up) && !PlattformCollide(Xpos, Ypos, Left, map) && x<Xpos)
+		while (!PlattformCollide(Xpos, Ypos, Left, map)) {
+			Direction = Left;
+			Xpos -= 3;
+			return;
+		}
+	//if we're moving Up and there's an opening Right and pacman is Right, move Right
+	if ((Direction == Up) && !PlattformCollide(Xpos, Ypos, Right, map) && x>Xpos)
+		while (!PlattformCollide(Xpos, Ypos, 3, map)) {
+			Direction = Right;
+			Xpos += 3;
+			return;
+		}
+	if (Direction == Up)//Up
+		while (!PlattformCollide(Xpos, Ypos, 2, map)) {
+			Ypos -= 3;
+			return;
+		}
+	/////////Right CASE (3)/////////////////////////////////////////////////////////////////////////////////////////////////////
+	//if we're moving Right and there's an opening above and pacman is above, move Up
+	if ((Direction == Right) && !PlattformCollide(Xpos, Ypos, Up, map) && y<Ypos)
+		while (!PlattformCollide(Xpos, Ypos, 2, map)) {
+			Direction = Up;
+			Ypos -= 3;
+			return;
+		}
+	//if we're moving Right and there's an opening below and pacman is below, move Down
+	if ((Direction == Right) && !PlattformCollide(Xpos, Ypos, Down, map) && y>Ypos)
+		while (!PlattformCollide(Xpos, Ypos, Down, map)) {
+			Direction = Down;
+			Ypos += 3;
+			return;
+		}
+	if (Direction == Right)//Right
+		while (!PlattformCollide(Xpos, Ypos, Right, map)) {
+			Xpos += 3;
+			return;
+		}
+	//////////////Down CASE (4)/////////////////////////////////////////////////////////////////////////////////////
+	//if we're moving Up and there's an opening Left and pacman is Left, move Left
+	if ((Direction == Down) && !PlattformCollide(Xpos, Ypos, Left, map) && x<Xpos)
+		while (!PlattformCollide(Xpos, Ypos, Left, map)) {
+			Direction = Left;
+			Xpos -= 3;
+			return;
+		}
+	//if we're moving Up and there's an opening Right and pacman is Right, move Right
+	if ((Direction == Up) && !PlattformCollide(Xpos, Ypos, Right, map) && x>Xpos)
+		while (!PlattformCollide(Xpos, Ypos, Right, map)) {
+			Direction = Right;
+			Xpos += 3;
+			return;
+		}
+	if (Direction == Down)//Down
+		while (!PlattformCollide(Xpos, Ypos, Down, map)) {
+			Ypos += 3;
+			return;
+		}
+	///////////////////////////////////////////////////////////////////////////////////////
+	//if pacman is above and there's no wall there, move Up
+	if ((y<Ypos) && !PlattformCollide(Xpos, Ypos, Up, map)) {
+		Direction = Up;
+		return;
+	}
+	//if pacman is below and there's no wall there, move Down
+	if ((y>Ypos) && !PlattformCollide(Xpos, Ypos, Down, map)) {
+		Direction = Down;
+		return;
+	}
+	//if pacman is Right and there's no wall there, move Right
+	if ((x>Xpos) && !PlattformCollide(Xpos, Ypos, Right, map)) {
+		Direction = Right;
+		return;
+	}
+	//if pacman is Left and there's no wall there, move Left
+	if ((x<Xpos) && !PlattformCollide(Xpos, Ypos, Left, map)) {
+		Direction = Left;
+		return;
+	}
+	//if pacman is above and there's no wall there, move Up
+	if (!PlattformCollide(Xpos, Ypos, Up, map)) {
+		Direction = Up;
+		return;
+	}
+	//if pacman is below and there's no wall there, move Down
+	if (!PlattformCollide(Xpos, Ypos, Down, map)) {
+		Direction = Down;
+		return;
+	}
+	//if pacman is Right and there's no wall there, move Right
+	if (!PlattformCollide(Xpos, Ypos, Right, map)) {
+		Direction = Right;
+		return;
+	}
+	//if pacman is Left and there's no wall there, move Left
+	if (!PlattformCollide(Xpos, Ypos, Left, map)) {
+		Direction = Left;
+		return;
+	}
+}
+bool GetPacman(int x, int y) {
+	return true;
+}
+int Ghost::collision(int b2_x, int b2_y, int b2_w, int b2_h)
+{
+	if ((Xpos > b2_x + b2_w - 1) || //box 2 is to the LEFT of box 1
+		(Ypos > b2_y + b2_h - 1) || //box 2 is ABOVE box 1
+		(b2_x  > Xpos + Width - 1) ||//box 2 is to the RIGHT of box1
+		(b2_y > Ypos + Height - 1)) //box 2 is BELOW box 1
+	{
+		return 0;
+	}
+	else
+	{
+		return 1;
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// Directions
+	//	const int Left = 1;
+	//const int Right = 2;
+	//const int Up = 3;
+	//const int Down = 4;
+/*int PlattformCollide(int x, int y, int dir, int level[25][25]){
+	enum directions { Right, Down, Left, Up };
+    Directions
+    1 = Right
+    2 = Down
+    3 = Left
+    4 = Up
+
+    // First, determine the cell of the 2-d array that the sprite is moving into.
+    int new_x = x;
+    int new_y = y;
+    int new_x1;
+    int new_x2;
+    int new_x3;
+    int new_y1;
+    int new_y2;
+    int new_y3;
+
+    if (dir == 3){ // Moving Right
+        // Check along the far Right side of the sprite, plus 3 (the amount we’re moving)
+        new_x1 = x + 4 + PACSIZE;
+        new_x2 = x + 4 + PACSIZE;
+        new_x3 = x + 4 + PACSIZE;
+        // Check at three points along that edge
+        new_y1 = y;
+        new_y2 = y + PACSIZE / 2;
+        new_y3 = y + PACSIZE;
+    }
+    else if (dir == 4){ //moving Down
+        new_x1 = x;
+        new_x2 = x + PACSIZE / 2;
+        new_x3 = x + PACSIZE;
+        //Check at three points along that edge
+        new_y1 = y + 4 + PACSIZE;
+        new_y2 = y + 4 + PACSIZE;
+        new_y3 = y + 4 + PACSIZE;
+    }
+    else if (dir == 1){ //moving Left
+        new_x1 = x - 4;
+        new_x2 = x - 4;
+        new_x3 = x - 4;
+        // Check at three points along that edge
+        new_y1 = y;
+        new_y2 = y + PACSIZE / 2;
+        new_y3 = y + PACSIZE;
+    }
+    else if (dir == 2){ //moving Up
+        new_x1 = x;
+        new_x2 = x + PACSIZE / 2;
+        new_x3 = x + PACSIZE;
+        //Check at three points along that edge
+        new_y1 = y - 4;
+        new_y2 = y - 4;
+        new_y3 = y - 4;
+    }
+    else return 99; // Or whatever the error condition is going to be.
+
+    // So, now we know that new_x, new_y is the place the sprite is trying to go.
+    // Translate this into the 2-d array
+    int new_cell_x1 = new_x1 / WALLSIZE;
+    int new_cell_x2 = new_x2 / WALLSIZE;
+    int new_cell_x3 = new_x3 / WALLSIZE;
+    int new_cell_y1 = new_y1 / WALLSIZE;
+    int new_cell_y2 = new_y2 / WALLSIZE;
+    int new_cell_y3 = new_y3 / WALLSIZE;
+
+    // Check to see if the resulting cell is solid.
+    if ((level[new_cell_x1][new_cell_y1] == 1)
+        || (level[new_cell_x2][new_cell_y2] == 1)
+        || (level[new_cell_x3][new_cell_y3] == 1))
+    {
+        //cout<<"collision!";
+        return 1;
+    }
+    else
+        return 0;
+}*/
