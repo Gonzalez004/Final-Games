@@ -4,9 +4,20 @@
 
 using namespace std;
 int PlattformCollide(int X,int Y, int dir, int Map[50][50]);
-
+// Starting point of the Player.
+int Square_X = 500;
+int Square_Y = 500;
 enum directions { Up, Down, Left, Right };
 
+/*class Trail {
+public:
+	void InitTrail(int XPos, int YPos);
+	void Draw();
+	//int Brick::collision(int b2_x, int b2_y, int b2_w, int b2_h);
+private:
+	int X;
+	int Y;
+};*/
 int main() {
 
 	//Setting up Map/Matrix
@@ -41,10 +52,6 @@ int main() {
 	int Velocity_X = 0;
 	int Velocity_Y = 0;
 	int Dir = 0;
-
-	//Starting point of the Player.
-	int Square_X = 500;
-	int Square_Y = 500;
 
 	//don't redraw until an event happens
 	bool Redraw = true;
@@ -95,27 +102,26 @@ int main() {
 		if (ev.type == ALLEGRO_EVENT_TIMER) {
 
 			if (key[Up]) {
-				Velocity_Y = -4;
+				Velocity_Y = -2;
 				Velocity_X = 0;
-				al_draw_filled_rectangle(50 * 20, 50 * 20, 50 * 20 + 20, 50 * 20 + 20, al_map_rgb(50, 80, 90));
 				//Square_Y -= 4.0;
 				Dir = Up;
 			}
 			if (key[Down]) {
-				Velocity_Y = 4;
+				Velocity_Y = 2;
 				Velocity_X = 0;
 				//Square_Y += 4.0;
 				Dir = Down;
 			}
 			if (key[Left]) {
 				Velocity_Y = 0;
-				Velocity_X = -4;
+				Velocity_X = -2;
 				//Square_X -= 4.0;
 				Dir = Left;
 			}
 			if (key[Right]) {
 				Velocity_Y = 0;
-				Velocity_X = 4;
+				Velocity_X = 2;
 				//Square_X += 4.0;
 				Dir = Right;
 			}
@@ -127,7 +133,7 @@ int main() {
 			Square_X += Velocity_X;
 			Square_Y += Velocity_Y;
 			//Draw a line behind the Player
-			Map[(Square_X) / 20][(Square_Y) / 20] = 2;
+		//	Map[(Square_X) / 20][(Square_Y) / 20] = 2;
 
 			//Collsion for The other lines
 			//Down collision
@@ -275,3 +281,15 @@ int PlattformCollide(int X, int Y, int dir, int Map[50][50]) {
 	else
 		return 0;
 }
+
+/*void Trail::InitTrail(int XPos, int YPos){
+	X = XPos;
+	Y = YPos;
+}
+void Trail::Draw(){
+	for (int i = 0; i < 50; i++) {
+		for (int j = 0; j < 50; j++) {
+			al_draw_filled_rectangle(i * 20, j * 20, i * 20 + 20, j * 20 + 20, al_map_rgb(50, 80, 90));
+		}
+	}
+}*/
