@@ -1,23 +1,13 @@
 #include <iostream>
 #include <allegro5/allegro.h>
 #include<allegro5/allegro_primitives.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 
 using namespace std;
 int PlattformCollide(int X,int Y, int dir, int Map[50][50]);
-// Starting point of the Player.
-int Square_X = 500;
-int Square_Y = 500;
 enum directions { Up, Down, Left, Right };
 
-/*class Trail {
-public:
-	void InitTrail(int XPos, int YPos);
-	void Draw();
-	//int Brick::collision(int b2_x, int b2_y, int b2_w, int b2_h);
-private:
-	int X;
-	int Y;
-};*/
 int main() {
 
 	//Setting up Map/Matrix
@@ -38,20 +28,34 @@ int main() {
 	al_init();
 	al_init_primitives_addon();
 	al_install_keyboard();
+	al_init_font_addon(); // initialize the font addon
+	al_init_ttf_addon();// initialize the ttf (True Type Font) addon
 	//Setting Up Variables
 	ALLEGRO_DISPLAY *Display = NULL;
 	ALLEGRO_EVENT_QUEUE *Event_Queue = NULL;
 	ALLEGRO_TIMER *Timer = NULL;
 	ALLEGRO_BITMAP *Square = NULL;
+	ALLEGRO_BITMAP *Square2 = NULL;
 	ALLEGRO_BITMAP *Wall = NULL;
 	bool key[4] = { false, false, false, false };
+	bool key2[4] = { false, false, false, false };
 	const int TronSize = 20;
-	const int WALLSIZE = 20;
+	const int WALLSIZE = 10;
+	int Winner1 = 0;
+	int Winner2 = 0;
 
 	//Player Speed
 	int Velocity_X = 0;
 	int Velocity_Y = 0;
+	int Velocity2_X = 0;
+	int Velocity2_Y = 0;
 	int Dir = 0;
+
+	// Starting point of the Players.
+	int Square_X = 100;
+	int Square_Y = 100;
+	int Square2_X = 150;
+	int Square2_Y = 150;
 
 	//don't redraw until an event happens
 	bool Redraw = true;
@@ -59,16 +63,25 @@ int main() {
 	//this controls our game loop
 	bool Doexit = false;
 
+	ALLEGRO_FONT *font = al_load_ttf_font("Gameplay.ttf", 30, 0);
+	ALLEGRO_FONT *font1 = al_load_ttf_font("game_over.ttf", 500, 0);
+
 	//set the timer so it "ticks" at 2 milliseconds
 	Timer = al_create_timer(.02);
 
 	//Creates the Display and Position its in
-	Display = al_create_display(1000, 1000);
-	al_set_window_position(Display, 0, 0);
+	Display = al_create_display(500, 500);
+	al_set_window_position(Display, 900, 0);
 
 	//create a little 32x32 square
 	Square = al_create_bitmap(TronSize, TronSize);
 	al_set_target_bitmap(Square);
+	al_clear_to_color(al_map_rgb(255, 255, 0));
+	al_set_target_bitmap(al_get_backbuffer(Display));
+	Event_Queue = al_create_event_queue();
+	//create a little 32x32 square
+	Square2 = al_create_bitmap(TronSize, TronSize);
+	al_set_target_bitmap(Square2);
 	al_clear_to_color(al_map_rgb(255, 255, 0));
 	al_set_target_bitmap(al_get_backbuffer(Display));
 	Event_Queue = al_create_event_queue();
@@ -102,75 +115,139 @@ int main() {
 		if (ev.type == ALLEGRO_EVENT_TIMER) {
 
 			if (key[Up]) {
-				Velocity_Y = -2;
+				Velocity_Y = -4;
 				Velocity_X = 0;
-				//Square_Y -= 4.0;
 				Dir = Up;
 			}
 			if (key[Down]) {
-				Velocity_Y = 2;
+				Velocity_Y = 4;
 				Velocity_X = 0;
-				//Square_Y += 4.0;
 				Dir = Down;
 			}
 			if (key[Left]) {
 				Velocity_Y = 0;
-				Velocity_X = -2;
-				//Square_X -= 4.0;
+				Velocity_X = -4;
 				Dir = Left;
 			}
 			if (key[Right]) {
 				Velocity_Y = 0;
-				Velocity_X = 2;
-				//Square_X += 4.0;
+				Velocity_X = 4;
 				Dir = Right;
 			}
+			////////////////////////////////////
+			/*int move;
+			srand(time(NULL));
+			move = rand() % 4 + 1; // Selects a random number 1 - 4.
+
+			if (move == 1) // If the number is 1 it will move the AI upwards.
+			{
+				Velocity2_Y = -2;
+				Velocity2_X = 0;
+				Dir = Up;
+			}
+			else if (move == 2) // If the number is 2 it will move the AI downwards.
+			{
+				Velocity2_Y = 2;
+				Velocity2_X = 0;
+				Dir = Down;
+			}
+			else if (move == 3) // If the number is 3 it will move the AI right.
+			{
+				Velocity2_Y = 0;
+				Velocity2_X = -2;
+				Dir = Left;
+			}
+			else if (move == 4) // If the number is 4 it will move the AI left.
+			{
+				Velocity2_Y = 0;
+				Velocity2_X = 2;
+				Dir = Right;
+			}*/
+			////////////////////////////////////////
+			
+		if (key2[0]) {
+				Velocity2_Y = -4;
+				Velocity2_X = 0;
+				Dir = Up;
+			}
+			if (key2[1]) {
+				Velocity2_Y = 4;
+				Velocity2_X = 0;
+				Dir = Down;
+			}
+			if (key2[2]) {
+				Velocity2_Y = 0;
+				Velocity2_X = -4;
+				Dir = Left;
+			}
+			if (key2[3]) {
+				Velocity2_Y = 0;
+				Velocity2_X = 4;
+				Dir = Right;
+			}
+
 			if (PlattformCollide(Square_X, Square_Y, 0, Map)) {
-				Square_X = 500;
-				Square_Y = 500;
+				Square_X = 100;
+				Square_Y = 100;
+				Winner2 = 100;
+			}
+			if (PlattformCollide(Square2_X, Square2_Y, 0, Map)) {
+				Square2_X = 100;
+				Square2_Y = 100;
+			Winner1 = 100;
 			}
 			//Move Player based on the Velocity
 			Square_X += Velocity_X;
 			Square_Y += Velocity_Y;
+			Square2_X += Velocity2_X;
+			Square2_Y += Velocity2_Y;
 			//Draw a line behind the Player
-		//	Map[(Square_X) / 20][(Square_Y) / 20] = 2;
+		 Map[(Square_X) / 10][(Square_Y) / 10] = 2;
+		 Map[(Square2_X) / 10][(Square2_Y) / 10] = 3;
 
 			//Collsion for The other lines
 			//Down collision
-			if (((Map[(Square_X) / 20][(Square_Y + 20 + 5) / 20] != 0) && Dir == Down) || ((Map[(Square_X + 20) / 20][(Square_Y + 20 + 5) / 20] != 0) && Dir == Down) || ((Map[(Square_X + 10) / 20][(Square_Y + 20 + 5) / 20] != 0) && Dir == Down)) {
+			if (((Map[(Square_X + 10) / 10][(Square_Y + 20) / 10] != 0) && Dir == Down)) {
 				cout << "Collision" << endl;
+				Winner2 = 100;
 			}
 			//Up collision
-			if (((Map[(Square_X) / 20][(Square_Y - 5) / 20] != 0) && Dir == Up) || ((Map[(Square_X + 20) / 20][(Square_Y - 5) / 20] != 0) && Dir == Up) || ((Map[(Square_X + 10) / 20][(Square_Y - 5) / 20] != 0) && Dir == Up)) {
+			if (((Map[(Square_X + 10) / 10][(Square_Y) / 10] != 0) && Dir == Up)) {
 				cout << "Collision" << endl;
+				Winner2 = 100;
 			}
 			//Left collision
-			if (((Map[(Square_X - 5) / 20][(Square_Y) / 20] != 0) && Dir == Left) || ((Map[(Square_X - 5) / 20][(Square_Y + 20) / 20] != 0) && Dir == Left) || ((Map[(Square_X - 5) / 20][(Square_Y + 10) / 20] != 0) && Dir == Left)) {
+			if (((Map[(Square_X) / 10][(Square_Y + 10) / 10] != 0) && Dir == Left)) {
 				cout << "Collision" << endl;
+				Winner2 = 100;
 			}
 			//Right collision
-			if (((Map[(Square_X + 20 + 5) / 20][(Square_Y) / 20] != 0) && Dir == Right) || ((Map[(Square_X + 20 + 5) / 20][(Square_Y + 20) / 20] != 0) && Dir == 3) || ((Map[(Square_X + 20 + 5) / 20][(Square_Y + 10) / 20] != 0) && Dir == Right)) {
+			if (((Map[(Square_X + 20) / 10][(Square_Y + 10) / 10] != 0) && Dir == Right)) {
 				cout << "Collision" << endl;
+				Winner2 = 100;
 			}
 
-			/*if (key[Up] && !PlattformCollide(Square_X, Square_Y, 0, Map)) {
-				Square_Y -= 4.0;
-				Dir = Up;
-			}
-			if (key[Down] && !PlattformCollide(Square_X, Square_Y, 1, Map)) {
-				Square_Y += 4.0;
-				Dir = Down;
-			}
-			if (key[Left] && !PlattformCollide(Square_X, Square_Y, 2, Map)) {
-				Square_X -= 4.0;
-				Dir = Left;
-			}
-			if (key[Right] && !PlattformCollide(Square_X, Square_Y, 3, Map)) {
-				Square_X += 4.0;
-				Dir = Right;
-			}
-			*/
 
+
+			if (((Map[(Square2_X + 10) / 10][(Square2_Y + 20) / 10] != 0) && Dir == Down)) {
+				cout << "Collision" << endl;
+				Winner1 = 100;
+			}
+			//Up collision
+			if (((Map[(Square2_X + 10) / 10][(Square2_Y) / 10] != 0) && Dir == Up)) {
+				cout << "Collision" << endl;
+				Winner1 = 100;
+			}
+			//Left collision
+			if (((Map[(Square2_X) / 10][(Square2_Y + 10) / 10] != 0) && Dir == Left)) {
+				cout << "Collision" << endl;
+				Winner1 = 100;
+			}
+			//Right collision
+			if (((Map[(Square2_X + 20) / 10][(Square2_Y + 10) / 10] != 0) && Dir == Right)) {
+				cout << "Collision" << endl;
+				Winner2 = 100;
+			}
 			Redraw = true;
 		}
 
@@ -201,6 +278,24 @@ int main() {
 			case ALLEGRO_KEY_RIGHT:
 				key[3] = true;
 				break;
+
+
+
+			case ALLEGRO_KEY_W:
+				key2[0] = true;
+				break;
+				//if the Down key has been pressed
+			case ALLEGRO_KEY_S:
+				key2[1] = true;
+				break;
+				//if the Left key has been pressed
+			case ALLEGRO_KEY_A:
+				key2[2] = true;
+				break;
+				//if the Right key has been pressed
+			case ALLEGRO_KEY_D:
+				key2[3] = true;
+				break;
 			}
 		}
 		//has something been released on the keyboard?
@@ -218,6 +313,20 @@ int main() {
 			case ALLEGRO_KEY_RIGHT:
 				key[3] = false;
 				break;
+
+			case ALLEGRO_KEY_W:
+				key2[0] = false;
+				break;
+			case ALLEGRO_KEY_S:
+				key2[1] = false;
+				break;
+			case ALLEGRO_KEY_A:
+				key2[2] = false;
+				break;
+			case ALLEGRO_KEY_D:
+				key2[3] = false;
+				break;
+
 				//kill the program if someone presses escape
 			case ALLEGRO_KEY_ESCAPE:
 				Doexit = true;
@@ -232,23 +341,38 @@ int main() {
 
 			for (int i = 0; i < 50; i++) {
 				for (int j = 0; j < 50; j++) {
-					al_draw_rectangle(i*20,j*20, i*20+20, j*20+20, al_map_rgb(50,80,90 ),1);
+				//	al_draw_rectangle(i*10,j*10, i*10+10, j*10+10, al_map_rgb(50,80,90 ),1);
 					if (Map[i][j] == 1) {
-						al_draw_bitmap(Wall, j * 20, i * 20, 0);
+						al_draw_bitmap(Wall, j * 10, i * 10, 0);
 						}
 					if (Map[i][j] == 2) {
-						al_draw_filled_rectangle(i * 20, j * 20, i * 20 + 20, j * 20 + 20, al_map_rgb(50, 80, 90));
+						al_draw_filled_rectangle(i * 10, j * 10, i * 10 + 10, j * 10 + 10, al_map_rgb(50, 80, 90));
 						}
+					if (Map[i][j] == 3) {
+						al_draw_filled_rectangle(i * 10, j * 10, i * 10 + 10, j * 10 + 10, al_map_rgb(0, 80, 0));
+					}
 					}
 				}
+			if (Winner1 == 100) {
+			al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
+				al_draw_text(font, al_map_rgb(255, 0, 0), 150, 250, 0, "Player 1 You win!");
+				al_rest(2);
+		}
+			if (Winner2 == 100) {
+				al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
+				al_draw_text(font, al_map_rgb(255, 0, 0), 150, 250, 0, "Player 2 You win!");
+				al_rest(2);
+			}
 			//actually Draws the square
 			al_draw_bitmap(Square, Square_X, Square_Y, 0);
+			al_draw_bitmap(Square2, Square2_X, Square2_Y, 0);
 
 			al_flip_display();
 
 		}
 	}//end game loop
 	al_destroy_bitmap(Square);
+	al_destroy_bitmap(Square2);
 	al_destroy_timer(Timer);
 	al_destroy_display(Display);
 	al_destroy_bitmap(Wall);
@@ -259,37 +383,26 @@ int main() {
 int PlattformCollide(int X, int Y, int dir, int Map[50][50]) {
 	enum directions { Up, Down, Left, Right };
 	//Down collision
-	if (((Map[(X) / 20][(Y + 20 + 5) / 20] == 1) && dir == Down) || ((Map[(X + 20) / 20][(Y + 20 + 5) / 20] == 1) && dir == Down) || ((Map[(X + 10) / 20][(Y + 20 + 5) / 20] == 1) && dir == Down)) {
-		cout << "Collision" << endl;
+	if (((Map[(X) / 10][(Y + 20 + 5) / 10] == 1) && dir == Down) || ((Map[(X + 20) / 10][(Y + 20 + 5) / 10] == 1) && dir == Down) || ((Map[(X + 10) / 10][(Y + 20 + 5) / 10] == 1) && dir == Down)) {
+		cout << "Collision Border" << endl;
 		return 1;
 	}
 	//Up collision
-	if (((Map[(X) / 20][(Y - 5) / 20] == 1) && dir == Up) || ((Map[(X + 20) / 20][(Y - 5) / 20] == 1) && dir == Up) || ((Map[(X + 10) / 20][(Y - 5) / 20] == 1) && dir == Up)) {
-		cout << "Collision" << endl;
+	if (((Map[(X) / 10][(Y - 5) / 10] == 1) && dir == Up) || ((Map[(X + 10) / 20][(Y - 5) / 10] == 1) && dir == Up) || ((Map[(X + 10) / 20][(Y - 5) / 10] == 1) && dir == Up)) {
+		cout << "Collision Border" << endl;
 		return 1;
 	}
 	//Left collision
-	if (((Map[(X - 5) / 20][(Y) / 20] == 1) && dir == Left) || ((Map[(X - 5) / 20][(Y + 20) / 20] == 1) && dir == Left) || ((Map[(X - 5) / 20][(Y + 10) / 20] == 1) && dir == Left)) {
-		cout << "Collision" << endl;
+	if (((Map[(X - 5) / 10][(Y) / 10] == 1) && dir == Left) || ((Map[(X - 5) / 10][(Y + 20) / 10] == 1) && dir == Left) || ((Map[(X - 5) / 10][(Y + 10) / 10] == 1) && dir == Left)) {
+		cout << "Collision Border" << endl;
 		return 1;
 	}
 	//Right collision
-	if (((Map[(X + 20 + 5) / 20][(Y) / 20] == 1) && dir == Right) || ((Map[(X + 20 + 5) / 20][(Y + 20) / 20] == 1) && dir == 3) || ((Map[(X + 20 + 5) / 20][(Y + 10) / 20] == 1) && dir == Right)) {
-		cout << "Collision" << endl;
+	if (((Map[(X + 20 + 5) / 10][(Y) / 10] == 1) && dir == Right) || ((Map[(X + 20 + 5) / 10][(Y + 20) / 10] == 1) && dir == 3) || ((Map[(X + 20 + 5) / 10][(Y + 10) / 10] == 1) && dir == Right)) {
+		cout << "Collision Border" << endl;
 		return 1;
 	}
 	else
 		return 0;
 }
 
-/*void Trail::InitTrail(int XPos, int YPos){
-	X = XPos;
-	Y = YPos;
-}
-void Trail::Draw(){
-	for (int i = 0; i < 50; i++) {
-		for (int j = 0; j < 50; j++) {
-			al_draw_filled_rectangle(i * 20, j * 20, i * 20 + 20, j * 20 + 20, al_map_rgb(50, 80, 90));
-		}
-	}
-}*/
