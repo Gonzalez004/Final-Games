@@ -3,6 +3,8 @@
 #include<allegro5/allegro_primitives.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+#include <allegro5\allegro_audio.h>
+#include <allegro5\allegro_acodec.h>
 
 using namespace std;
 int PlattformCollide(int X, int Y, int dir, int Map[50][50]);
@@ -27,6 +29,8 @@ int main() {
 
 	al_init();
 	al_init_primitives_addon();
+	al_install_audio();
+	al_init_acodec_addon();
 	al_install_keyboard();
 	al_init_font_addon(); // initialize the font addon
 	al_init_ttf_addon();// initialize the ttf (True Type Font) addon
@@ -37,12 +41,25 @@ int main() {
 	ALLEGRO_BITMAP *Square = NULL;
 	ALLEGRO_BITMAP *Square2 = NULL;
 	ALLEGRO_BITMAP *Wall = NULL;
+	ALLEGRO_SAMPLE *Countdown = NULL;
+	ALLEGRO_SAMPLE *Song = NULL;
+	ALLEGRO_SAMPLE_INSTANCE *SongInstance = NULL;
 	bool key[4] = { false, false, false, false };
 	bool key2[4] = { false, false, false, false };
 	const int TronSize = 20;
 	const int WALLSIZE = 10;
 	int Winner1 = 0;
 	int Winner2 = 0;
+
+	//set up sounds
+	al_reserve_samples(10);
+	Countdown = al_load_sample("ThreeTwoOne.wav");
+	Song = al_load_sample("Mortalkombat.wav");
+
+	SongInstance = al_create_sample_instance(Song);
+	al_set_sample_instance_playmode(SongInstance, ALLEGRO_PLAYMODE_LOOP);
+	al_attach_sample_instance_to_mixer(SongInstance, al_get_default_mixer());
+
 
 	//Player Speed
 	int Velocity_X = 0;
@@ -52,10 +69,10 @@ int main() {
 	int Dir = 0;
 
 	// Starting point of the Players.
-	int Square_X = 100;
-	int Square_Y = 100;
+	int Square_X = 350;
+	int Square_Y = 350;
 	int Square2_X = 150;
-	int Square2_Y = 150;
+	int Square2_Y = 350;
 
 	//don't redraw until an event happens
 	bool Redraw = true;
@@ -76,19 +93,19 @@ int main() {
 	//create a little 32x32 square
 	Square = al_create_bitmap(TronSize, TronSize);
 	al_set_target_bitmap(Square);
-	al_clear_to_color(al_map_rgb(255, 255, 0));
+	al_clear_to_color(al_map_rgb(0, 0, 252));
 	al_set_target_bitmap(al_get_backbuffer(Display));
 	Event_Queue = al_create_event_queue();
 	//create a little 32x32 square
 	Square2 = al_create_bitmap(TronSize, TronSize);
 	al_set_target_bitmap(Square2);
-	al_clear_to_color(al_map_rgb(255, 255, 0));
+	al_clear_to_color(al_map_rgb(255, 0, 0));
 	al_set_target_bitmap(al_get_backbuffer(Display));
 	Event_Queue = al_create_event_queue();
 	//creating wall
 	Wall = al_create_bitmap(WALLSIZE, WALLSIZE);
 	al_set_target_bitmap(Wall);
-	al_clear_to_color(al_map_rgb(0, 255, 255));
+	al_clear_to_color(al_map_rgb(0, 0, 0));
 	al_set_target_bitmap(al_get_backbuffer(Display));
 	Event_Queue = al_create_event_queue();
 
@@ -107,13 +124,12 @@ int main() {
 	//al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
 	al_draw_text(font, al_map_rgb(255, 0, 0), 100, 250, 0, "Welcome To Tron");
 	al_flip_display();
-	al_rest(2);
+	al_rest(1);
 	al_clear_to_color(al_map_rgb(0, 0, 0));
-
 	//al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
 	al_draw_text(font, al_map_rgb(255, 0, 0), 40, 250, 0, "Player 1 is on the right");
 	al_flip_display();
-	al_rest(2);
+	al_rest(1);
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
 //	al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
@@ -131,18 +147,19 @@ int main() {
 	//al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
 	al_draw_text(font, al_map_rgb(255, 0, 0), 100, 250, 0, "Only One Comes Out");
 	al_flip_display();
-	al_rest(2);
+	al_play_sample(Countdown, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
+	al_rest(5);
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
 	//al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 0));
-	al_draw_text(font, al_map_rgb(255, 0, 0), 150, 250, 0, "Race!");
+	al_draw_text(font, al_map_rgb(255, 0, 0), 150, 250, 0, "Go!");
 	al_flip_display();
+	al_play_sample(Song, 1, 0, 1, ALLEGRO_PLAYMODE_ONCE, 0);
 	al_rest(1);
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 
 	//Starts the Timer
 	al_start_timer(Timer);
-
 
 	while (!Doexit)
 	{
@@ -173,36 +190,6 @@ int main() {
 				Velocity_X = 4;
 				Dir = Right;
 			}
-			////////////////////////////////////
-			/*int move;
-			srand(time(NULL));
-			move = rand() % 4 + 1; // Selects a random number 1 - 4.
-
-			if (move == 1) // If the number is 1 it will move the AI upwards.
-			{
-			Velocity2_Y = -2;
-			Velocity2_X = 0;
-			Dir = Up;
-			}
-			else if (move == 2) // If the number is 2 it will move the AI downwards.
-			{
-			Velocity2_Y = 2;
-			Velocity2_X = 0;
-			Dir = Down;
-			}
-			else if (move == 3) // If the number is 3 it will move the AI right.
-			{
-			Velocity2_Y = 0;
-			Velocity2_X = -2;
-			Dir = Left;
-			}
-			else if (move == 4) // If the number is 4 it will move the AI left.
-			{
-			Velocity2_Y = 0;
-			Velocity2_X = 2;
-			Dir = Right;
-			}*/
-			////////////////////////////////////////
 
 			if (key2[0]) {
 				Velocity2_Y = -4;
@@ -377,10 +364,24 @@ int main() {
 		if (Redraw && al_is_event_queue_empty(Event_Queue)) {
 			Redraw = false;
 			al_clear_to_color(al_map_rgb(0, 0, 0));
+			srand(time(NULL));
+			int Screen = rand() % 3 + 1;
+
+			if (Screen == 1)
+			{
+			al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(0, 255, 255));
+			}
+			else if (Screen == 2)
+			{
+			al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(255, 255, 0));
+			}
+			else if (Screen == 3) {
+			al_draw_filled_rectangle(0, 0, 500, 500, al_map_rgb(255, 0, 255));
+			}
 
 			for (int i = 0; i < 50; i++) {
 				for (int j = 0; j < 50; j++) {
-					//	al_draw_rectangle(i*10,j*10, i*10+10, j*10+10, al_map_rgb(50,80,90 ),1);
+						al_draw_rectangle(i*10,j*10, i*10+10, j*10+10, al_map_rgb(0,0,0),1);
 					if (Map[i][j] == 1) {
 						al_draw_bitmap(Wall, j * 10, i * 10, 0);
 					}
@@ -411,27 +412,6 @@ int main() {
 			//actually Draws the square
 			if (Winner1 == 0 && Winner2 == 0) {
 
-				srand(time(NULL));
-				int Screen = rand() % 4 + 1; // Selects a random number 1 - 4.
-
-				if (Screen == 1) // If the number is 1 it will move the AI upwards.
-				{
-				
-				}
-				else if (Screen == 2) // If the number is 2 it will move the AI downwards.
-				{
-				
-				}
-				else if (Screen == 3) // If the number is 3 it will move the AI right.
-				{
-					
-				}
-				else if (Screen == 4) // If the number is 4 it will move the AI left.
-				{
-
-				}
-
-
 
 				al_draw_bitmap(Square, Square_X, Square_Y, 0);
 				al_draw_bitmap(Square2, Square2_X, Square2_Y, 0);
@@ -452,6 +432,9 @@ int main() {
 	al_destroy_timer(Timer);
 	al_destroy_display(Display);
 	al_destroy_bitmap(Wall);
+	al_destroy_sample(Song);
+	al_destroy_sample(Countdown);
+	al_destroy_sample_instance(SongInstance);
 	al_destroy_event_queue(Event_Queue);
 
 	return 0;
@@ -481,4 +464,3 @@ int PlattformCollide(int X, int Y, int dir, int Map[50][50]) {
 	else
 		return 0;
 }
-
