@@ -48,9 +48,28 @@ int main() {
 	int Map[50][50];
 	for (int i = 0; i < 50; i++) {
 		for (int j = 0; j < 50; j++) {
-			Map[i][j] = 0;
 			if (i == 0 || i == 49 || j == 0 || j == 49)
 				Map[i][j] = 1;
+			else if (i == 10 && j < 30)
+				Map[i][j] = 1;
+			else if (i == 10 && j > 35)
+				Map[i][j] = 1;
+			else if (i == 40 && j > 35)
+				Map[i][j] = 1;
+			else if (i == 30 && j > 35)
+				Map[i][j] = 1;
+			else if (i > 15 && j == 10)
+				Map[i][j] = 1;
+			else if ( i < 40 && i > 10 && j == 20)
+				Map[i][j] = 1;
+			else if (i < 31 && i > 15 && j == 35)
+				Map[i][j] = 1;
+			else if (i < 31 && i > 15 && j == 42)
+				Map[i][j] = 1;
+			else if (i < 42 && i > 15 && j == 28)
+				Map[i][j] = 1;
+			else 
+				Map[i][j] = 0;
 		}
 	}
 	
@@ -64,7 +83,7 @@ int main() {
 	bool Redraw = true;
 
 	//this controls our game loop
-	bool Doexit = false;
+	bool Doexit = false; 
 
 	//set the timer so it "ticks" at 2 milliseconds
 	Timer = al_create_timer(.02);
@@ -75,11 +94,17 @@ int main() {
 	al_set_window_title(Display, "Tank Trouble"); //Window Title
 
 	//create a little 32x32 square
-	Square = al_load_bitmap("tank1.png");
+	//Square = al_load_bitmap("tank1.png");
+	Square = al_create_bitmap(20, 20);
+	al_set_target_bitmap(Square);
+	al_clear_to_color(al_map_rgb(255, 0, 0));
 	al_set_target_bitmap(al_get_backbuffer(Display));
 
 	//create a little 32x32 square2
-	Square2 = al_load_bitmap("tank2.png");
+	//Square2 = al_load_bitmap("tank2.png");
+	Square2 = al_create_bitmap(20, 20);
+	al_set_target_bitmap(Square2);
+	al_clear_to_color(al_map_rgb(0, 0, 255));
 	al_set_target_bitmap(al_get_backbuffer(Display));
 
 	//creating wall
@@ -122,19 +147,12 @@ int main() {
 			}
 
 			//Player 1 Physics
-			if (Key[0]) {  //&& !WallCollision(Square_X, Square_Y, Dir, Angle, 30, Map)
+			if (Key[0] && !WallCollision(Square_X, Square_Y, Dir, Angle, 20, Map)) {  //&& !WallCollision(Square_X, Square_Y, Dir, Angle, 30, Map)
 				Square_Y += 4 * sin(3.14*Angle / 180);
 				Square_X += 4 * cos(3.14*Angle / 180);
-				//////////////////////////////////////
-						/*if (Map[50][50] == 1) {
-							Square_Y -= 4 * sin(3.14*Angle / 180);
-							Square_X -= 4 * cos(3.14*Angle / 180);
-						}*/
-				//////////////////////////////////////
-
 				Dir = 0;
 			}
-			if (Key[1] && !WallCollision(Square_X, Square_Y, Dir, Angle, 30, Map)) {  //&& !WallCollision(Square_X, Square_Y, Dir, Angle, 30, Map)
+			if (Key[1] && !WallCollision(Square_X, Square_Y, Dir, Angle, 20, Map)) {  //&& !WallCollision(Square_X, Square_Y, Dir, Angle, 30, Map)
 				Square_Y -= 4 * sin(3.14*Angle / 180);
 				Square_X -= 4 * cos(3.14*Angle / 180);
 				Dir = 1;
@@ -149,12 +167,12 @@ int main() {
 			}
 
 			//Player 2 Physics
-			if (Key2[0]) {
+			if (Key2[0] && !WallCollision(Square2_X, Square2_Y, Dir, Angle2, 20, Map)) {
 				Square2_Y += 4 * sin(3.14*Angle2 / 180);
 				Square2_X += 4 * cos(3.14*Angle2 / 180);
 				Dir2 = 0;
 			}
-			if (Key2[1]) {
+			if (Key2[1] && !WallCollision(Square2_X, Square2_Y, Dir, Angle2, 20, Map)) {
 				Square2_Y -= 4 * sin(3.14*Angle2 / 180);
 				Square2_X -= 4 * cos(3.14*Angle2 / 180);
 				int Dir2 = 1;
@@ -167,22 +185,7 @@ int main() {
 				Angle2 += 4;
 				Dir2 = 3;
 			}
-			////////////////////////////////////////////////////////////////////
-			////////////////////////////////////////////////////////////////////
-			///////////////////////////////////////////////////////////////
-			for (int i = 0; i < 50; i++) {
-				for (int j = 0; j < 50; j++) {
-					if (Map[j][i] == 1) {
-						Square_X = Square_X;
-						Square_Y = Square_Y;
-					}
-				}
-			}
-
-
-			////////////////////////////////////////////////////////////////////
-			////////////////////////////////////////////////////////////////////
-			///////////////////////////////////////////////////////////////
+		
 			Redraw = true;
 		}
 
@@ -270,13 +273,13 @@ int main() {
 			for (int i = 0; i < 50; i++) {
 				for (int j = 0; j < 50; j++) {
 					//'al_draw_rectangle(i * 20, j * 20, i * 20 + 20, j * 20 + 20, al_map_rgb(50, 80, 90), 3);
-					if (Map[j][i] == 1) {
-						al_draw_bitmap(Wall, j * 20, i * 20, 0);
+					if (Map[i][j] == 1) {
+						al_draw_bitmap(Wall, i * 20, j * 20, 0);
 					}
 				}
 			}
-			al_draw_rotated_bitmap(Square, 15, 15, Square_X, Square_Y, ((Angle*3.14) / 180), 0);
-			al_draw_rotated_bitmap(Square2, 15, 15, Square2_X, Square2_Y, ((Angle2*3.14) / 180), 0);
+			al_draw_rotated_bitmap(Square, 10, 10, Square_X, Square_Y, ((Angle*3.14) / 180), 0);
+			al_draw_rotated_bitmap(Square2, 10, 10, Square2_X, Square2_Y, ((Angle2*3.14) / 180), 0);
 
 			al_flip_display();
 
@@ -302,11 +305,6 @@ bool WallCollision(int x, int y, int direction, int angle, int size, int Map[50]
 		newX = x - (4 + size) * cos(3.14*angle / 180);
 		newY = y - (4 + size) * sin(3.14*angle / 180);
 	}
-	if (direction == 2)
-		angle = angle + 4;
-	else
-		angle = angle - 4;
-	
 	if (Map[newX / 10][newY / 10] == 1)
 		return 1;
 	else return false;
