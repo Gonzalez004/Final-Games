@@ -1,0 +1,308 @@
+#include <stdio.h>
+#include <allegro5/allegro.h>
+#include <iostream>
+
+using namespace std;
+
+float Player1_X = 100;
+float Player1_Y = 800;
+
+float Speed_X = 4;
+float Speed_Y = 4;
+
+int ScreenW = 900;
+int ScreenH = 900;
+
+int PlayerSize = 30;
+
+bool redraw = true;
+
+bool Key[4] = { false, false, false, false };
+
+void JumpTime(int Jump, int Speed);
+
+int Clock = 0;
+
+
+//float Gravity = 0.5;
+//bool OnGround = false;
+//void StartJump();
+//void EndJump();
+//void Loop();
+//void Update();
+int main()
+{
+	ALLEGRO_DISPLAY *Display = NULL;
+	ALLEGRO_EVENT_QUEUE *Event_Queue = NULL;
+	ALLEGRO_TIMER *Timer = NULL;
+	ALLEGRO_BITMAP *Player_1 = NULL;
+
+
+	//this controls our game loop
+	bool doexit = false;
+
+	al_init();
+
+	//get the keyboard ready to use
+	al_install_keyboard();
+
+	Timer = al_create_timer(.01);
+
+	Display = al_create_display(ScreenW, ScreenH);
+
+	Player_1 = al_create_bitmap(PlayerSize, PlayerSize);
+
+
+	al_set_target_bitmap(Player_1);
+	al_clear_to_color(al_map_rgb(0, 0, 250));
+
+
+	al_set_target_bitmap(al_get_backbuffer(Display));
+
+	Event_Queue = al_create_event_queue();
+
+	al_register_event_source(Event_Queue, al_get_display_event_source(Display));
+	al_register_event_source(Event_Queue, al_get_timer_event_source(Timer));
+	al_register_event_source(Event_Queue, al_get_keyboard_event_source());
+
+	al_clear_to_color(al_map_rgb(0, 0, 0));
+
+	al_flip_display();
+
+	al_start_timer(Timer);
+
+	while (!doexit) {
+		
+		ALLEGRO_EVENT ev;
+		al_wait_for_event(Event_Queue, &ev);
+		//cout << Clock << endl;
+		cout << Player1_X << "," << Player1_Y << endl;
+		if (ev.type == ALLEGRO_EVENT_TIMER) {
+			if (Key[0]) {
+				Player1_X -= Speed_X;
+			}
+			if (Key[1]) {
+				Player1_X += Speed_X;
+			}
+			if (Key[2] && Player1_Y >= 700 ) {//&& Clock <= 25
+				//Clock = Clock + 1;
+				Player1_Y -= Speed_Y;
+			}
+			if (Player1_Y <= 700) {
+				Key[2] = false;
+			}
+			if (Key[3] && Player1_Y < 800) {
+				Player1_Y += Speed_Y;
+			}
+			if (!Key[2] && Player1_Y < 800) {
+				Player1_Y += Speed_Y;
+				Clock = 0;
+			}
+			
+			redraw = true;
+		}
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
+		else if (ev.type == ALLEGRO_EVENT_DISPLAY_CLOSE) {
+			break;
+		}
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		else if (ev.type == ALLEGRO_EVENT_KEY_DOWN) {
+			switch (ev.keyboard.keycode) {
+
+			case ALLEGRO_KEY_LEFT:
+				Key[0] = true;
+				break;
+
+			case ALLEGRO_KEY_RIGHT:
+				Key[1] = true;
+				break;
+
+			case ALLEGRO_KEY_UP:
+				Key[2] = true;
+				break;
+
+			case ALLEGRO_KEY_DOWN:
+				Key[3] = true;
+				break;
+			}
+		}
+
+		///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		else if (ev.type == ALLEGRO_EVENT_KEY_UP) {
+			switch (ev.keyboard.keycode) {
+			case ALLEGRO_KEY_LEFT:
+				Key[0] = false;
+				break;
+
+			case ALLEGRO_KEY_RIGHT:
+				Key[1] = false;
+				break;
+
+			case ALLEGRO_KEY_UP:
+				Key[2] = false;
+				break;
+
+			case ALLEGRO_KEY_DOWN:
+				Key[3] = false;
+				break;
+
+			case ALLEGRO_KEY_ESCAPE:
+				doexit = true;
+				break;
+			}
+		}
+		if (redraw && al_is_event_queue_empty(Event_Queue)) {
+			redraw = false;
+			al_clear_to_color(al_map_rgb(0, 0, 35));
+
+			al_draw_bitmap(Player_1, Player1_X, Player1_Y, 0);
+
+			al_flip_display();
+		}
+	}
+
+	al_destroy_bitmap(Player_1);
+	al_destroy_timer(Timer);
+	al_destroy_display(Display);
+	al_destroy_event_queue(Event_Queue);
+
+	return 0;
+}
+//void StartJump() {
+//	if (OnGround) {
+//		Speed_Y = -12.0;
+//		OnGround = false;
+//	}
+//}
+//void EndJump() {
+//	if (Speed_Y < -6.0)
+//		Speed_Y = -6.0;
+//}
+//void Loop() {
+//	Update();
+//}
+//void Update() {
+//		Speed_Y += Gravity;
+//		Player1_Y += Speed_Y;
+//	    Player1_X += Speed_X;
+//    
+//	    if(Player1_Y > 175.0)
+//	    {
+//        Player1_Y = 175.0;
+//        Speed_Y = 0.0;
+//	    OnGround = true;
+//	    }
+//	    
+//	    if(Player1_X < 10 || Player1_X > 190)
+//        Speed_X *= -1;
+//}
+
+void JumpTime(int Jump, int Speed) {
+	if (Jump = 750) {
+		Speed = -Speed;
+	}
+}
+
+
+//float myGravity = 0.2f;
+//float maxFallSpeed = -5.0f;
+//float myJumpForce = 5.0f;
+//float curJumpForce = 0.0f;
+//float deltaTime; (Time Between frames)
+//
+//bool m_jumping = false;
+//
+//if(press key){
+//   m_jumping = true;
+//   curJumpForce = myJumpForce;
+//}
+//
+//if(m_jumping){
+//   player.y += curJumpForce * deltaTime;
+//   
+//   if(curJumpForce > maxFallSpeed){
+//      myJumpForce -= myGravity * deltaTime;
+//   }
+//	else{
+//      curJumpForce = maxFallSpeed;
+//   }
+//
+//   if(Hit Ground){
+//      m_jumping = false;
+//   }
+//}x
+
+
+
+
+//var canvas = document.getElementById('canvas');
+//var ctx = canvas.getContext('2d');
+//
+//var positionX = 100.0;
+//var positionY = 175.0;
+//var velocityX = 4.0;
+//var velocityY = 0.0;
+//var gravity = 0.5;
+//var onGround = false;
+//
+//window.addEventListener("mousedown", StartJump, false);
+//window.addEventListener("mouseup", EndJump, false);
+//
+//Loop();
+//
+//function StartJump()
+//{
+//    if(onGround)
+//    {
+//        velocityY = -12.0;
+//        onGround = false;
+//    }
+//}
+//
+//function EndJump()
+//{
+//    if(velocityY < -6.0)
+//        velocityY = -6.0;
+//}
+//
+//function Loop()
+//{
+//    Update();
+//    Render();
+//    window.setTimeout(Loop, 33);    
+//}
+//
+//function Update()
+//{
+//    velocityY += gravity;
+//    positionY += velocityY;
+//    positionX += velocityX;
+//    
+//    if(positionY > 175.0)
+//    {
+//        positionY = 175.0;
+//        velocityY = 0.0;
+//        onGround = true;
+//    }
+//    
+//    if(positionX < 10 || positionX > 190)
+//        velocityX *= -1;
+//}
+//
+//function Render()
+//{
+//    ctx.clearRect(0, 0, 200, 200);
+//    ctx.beginPath();
+//    ctx.moveTo(0,175);
+//    ctx.lineTo(200,175);
+//    ctx.stroke();
+//    ctx.beginPath();
+//    ctx.moveTo(positionX - 10, positionY - 20);
+//    ctx.lineTo(positionX + 10, positionY - 20);
+//    ctx.lineTo(positionX + 10, positionY);
+//    ctx.lineTo(positionX - 10, positionY);
+//    ctx.closePath();
+//    ctx.stroke(); 
+//}
