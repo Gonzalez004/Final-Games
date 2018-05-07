@@ -35,3 +35,46 @@ void SpaceShip::Update() {
 	else if (y > Height)
 		y = Height;
 }
+void SpaceShip::Render() {
+	GameObject::Render();
+
+	int fx = (currFrame % animationColumns) * frameWidth;
+	int fy = animationRow * frameHeight;
+	al_draw_bitmap_region(Image, fx, fy, frameWidth, frameHeight, 
+		x-frameWidth/2,y-frameHeight/2,0);
+}
+void SpaceShip::MoveUp() {
+	animationRow = 0;
+	dirY = -1;
+}
+void SpaceShip::MoveDown() {
+	animationRow = 2;
+	dirY = 1;
+}
+void SpaceShip::MoveLeft() {
+	currFrame = 2;
+	dirX = -1;
+}
+void SpaceShip::MoveRight() {
+	currFrame = 1;
+	dirX = -1;
+}
+void SpaceShip::ResetAnimation(int position) {
+	if (position == 1) {
+		animationRow = 1;
+		dirY = 0;
+	}
+	else {
+		currFrame = 0;
+		dirX = 0;
+	}
+}
+
+void SpaceShip::Collide(int objectID) {
+	if (objectID == ENEMY)
+		lives--;
+}
+
+
+
+
